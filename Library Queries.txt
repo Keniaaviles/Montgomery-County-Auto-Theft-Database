@@ -1,0 +1,146 @@
+﻿USE moco_ac_db;
+
+
+
+
+#Requirement A,B,C
+
+
+CREATE OR REPLACE VIEW View_Crime_Stats_By_City_And_State AS
+SELECT 
+    c.City_Name,
+    c.State,
+    COUNT(cl.Location_ID) AS Total_Crimes,
+    COUNT(DISTINCT cl.Block_Address) AS Unique_Streets,
+    ROUND(COUNT(cl.Location_ID) / COUNT(DISTINCT cl.Block_Address), 2) AS Avg_Crimes_Per_Street
+FROM 
+    Crime_Location cl
+JOIN 
+    Cities c ON cl.City_ID = c.City_ID
+WHERE 
+    cl.City_ID IS NOT NULL
+    AND cl.Block_Address IS NOT NULL
+    AND cl.Block_Address != ''
+GROUP BY 
+    c.City_Name, c.State;
+
+
+SELECT * FROM View_Crime_Stats_By_City_And_State;
+
+
+
+
+
+
+#Requirement A,B
+
+
+CREATE OR REPLACE VIEW View_Crimes_In_Zip20866 AS
+SELECT 
+    cl.Location_ID,
+    cl.Block_Address,
+    c.Zip_Code
+FROM 
+    Crime_Location cl
+JOIN 
+    Cities c ON cl.City_ID = c.City_ID
+WHERE 
+    c.Zip_Code = '20866';
+
+
+SELECT * FROM View_Crimes_In_Zip20866;
+
+
+
+
+#Requirement A,B,C
+
+
+CREATE OR REPLACE VIEW View_Streets_With_Multiple_Crimes AS
+SELECT 
+    cl.Block_Address,
+    c.City_Name,
+    c.State,
+    COUNT(cl.Location_ID) AS Crime_Count
+FROM 
+    Crime_Location cl
+JOIN 
+    Cities c ON cl.City_ID = c.City_ID
+WHERE 
+        cl.Block_Address IS NOT NULL AND cl.Block_Address != ''
+GROUP BY 
+    cl.Block_Address, c.City_Name, c.State
+HAVING 
+    COUNT(cl.Location_ID) > 2;
+
+
+SELECT * FROM View_Streets_With_Multiple_Crimes;
+
+
+
+
+#Requirement A, D
+
+
+CREATE OR REPLACE VIEW View_Location_And_City_Details AS
+SELECT 
+    cl.Location_ID,
+    cl.Block_Address,
+    cl.Place_ID,
+    c.City_Name,
+    c.State
+FROM 
+    Crime_Location cl
+JOIN 
+    place p ON cl.Place_ID = p.Place_ID
+JOIN 
+    Cities c ON cl.City_ID = c.City_ID;
+
+
+SELECT * FROM View_Location_And_City_Details;
+
+
+#Requirement A,B
+
+
+CREATE OR REPLACE VIEW View_MD_Crime_Locations AS
+SELECT 
+    cl.Location_ID,
+    cl.Block_Address,
+    c.City_Name
+FROM 
+    Crime_Location cl
+JOIN 
+    Cities c ON cl.City_ID = c.City_ID
+WHERE 
+    c.State = 'MD';
+    
+SELECT * FROM View_MD_Crime_Locations;
+
+
+#Requirement E Subquery
+
+
+CREATE OR REPLACE VIEW View_HighCrime_Streets AS
+SELECT 
+    cl.Block_Address,
+    c.Zip_Code
+FROM 
+    Crime_Location cl
+JOIN 
+    Cities c ON cl.City_ID = c.City_ID
+WHERE 
+    c.Zip_Code IN (
+        SELECT c2.Zip_Code
+        FROM Crime_Location cl2
+        JOIN Cities c2 ON cl2.City_ID = c2.City_ID
+        GROUP BY c2.Zip_Code
+        HAVING COUNT(*) > 2
+    );
+
+
+
+
+
+
+SELECT * FROM View_HighCrime_Streets_By_Zip;
